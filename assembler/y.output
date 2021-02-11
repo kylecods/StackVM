@@ -1,0 +1,227 @@
+Terminals unused in grammar
+
+   MINUS
+
+
+Grammar
+
+    0 $accept: file $end
+
+    1 file: file instruction
+    2     | %empty
+
+    3 instruction: push_stmt
+    4            | POP
+    5            | ADD
+    6            | HALT
+    7            | MULTI
+    8            | DIVIDE
+    9            | BIT_AND
+   10            | BIT_OR
+   11            | JUMP INTEGER
+   12            | JUMPF INTEGER
+   13            | LOOP
+   14            | CMP
+
+   15 push_stmt: PUSH INTEGER
+   16          | PUSH _FLOAT
+
+
+Terminals, with rules where they appear
+
+$end (0) 0
+error (256)
+INTEGER (258) 11 12 15
+_FLOAT (259) 16
+PUSH (260) 15 16
+ADD (261) 5
+MINUS (262)
+MULTI (263) 7
+DIVIDE (264) 8
+BIT_OR (265) 10
+BIT_AND (266) 9
+JUMP (267) 11
+JUMPF (268) 12
+HALT (269) 6
+POP (270) 4
+CMP (271) 14
+LOOP (272) 13
+
+
+Nonterminals, with rules where they appear
+
+$accept (18)
+    on left: 0
+file (19)
+    on left: 1 2, on right: 0 1
+instruction (20)
+    on left: 3 4 5 6 7 8 9 10 11 12 13 14, on right: 1
+push_stmt (21)
+    on left: 15 16, on right: 3
+
+
+State 0
+
+    0 $accept: . file $end
+
+    $default  reduce using rule 2 (file)
+
+    file  go to state 1
+
+
+State 1
+
+    0 $accept: file . $end
+    1 file: file . instruction
+
+    $end     shift, and go to state 2
+    PUSH     shift, and go to state 3
+    ADD      shift, and go to state 4
+    MULTI    shift, and go to state 5
+    DIVIDE   shift, and go to state 6
+    BIT_OR   shift, and go to state 7
+    BIT_AND  shift, and go to state 8
+    JUMP     shift, and go to state 9
+    JUMPF    shift, and go to state 10
+    HALT     shift, and go to state 11
+    POP      shift, and go to state 12
+    CMP      shift, and go to state 13
+    LOOP     shift, and go to state 14
+
+    instruction  go to state 15
+    push_stmt    go to state 16
+
+
+State 2
+
+    0 $accept: file $end .
+
+    $default  accept
+
+
+State 3
+
+   15 push_stmt: PUSH . INTEGER
+   16          | PUSH . _FLOAT
+
+    INTEGER  shift, and go to state 17
+    _FLOAT   shift, and go to state 18
+
+
+State 4
+
+    5 instruction: ADD .
+
+    $default  reduce using rule 5 (instruction)
+
+
+State 5
+
+    7 instruction: MULTI .
+
+    $default  reduce using rule 7 (instruction)
+
+
+State 6
+
+    8 instruction: DIVIDE .
+
+    $default  reduce using rule 8 (instruction)
+
+
+State 7
+
+   10 instruction: BIT_OR .
+
+    $default  reduce using rule 10 (instruction)
+
+
+State 8
+
+    9 instruction: BIT_AND .
+
+    $default  reduce using rule 9 (instruction)
+
+
+State 9
+
+   11 instruction: JUMP . INTEGER
+
+    INTEGER  shift, and go to state 19
+
+
+State 10
+
+   12 instruction: JUMPF . INTEGER
+
+    INTEGER  shift, and go to state 20
+
+
+State 11
+
+    6 instruction: HALT .
+
+    $default  reduce using rule 6 (instruction)
+
+
+State 12
+
+    4 instruction: POP .
+
+    $default  reduce using rule 4 (instruction)
+
+
+State 13
+
+   14 instruction: CMP .
+
+    $default  reduce using rule 14 (instruction)
+
+
+State 14
+
+   13 instruction: LOOP .
+
+    $default  reduce using rule 13 (instruction)
+
+
+State 15
+
+    1 file: file instruction .
+
+    $default  reduce using rule 1 (file)
+
+
+State 16
+
+    3 instruction: push_stmt .
+
+    $default  reduce using rule 3 (instruction)
+
+
+State 17
+
+   15 push_stmt: PUSH INTEGER .
+
+    $default  reduce using rule 15 (push_stmt)
+
+
+State 18
+
+   16 push_stmt: PUSH _FLOAT .
+
+    $default  reduce using rule 16 (push_stmt)
+
+
+State 19
+
+   11 instruction: JUMP INTEGER .
+
+    $default  reduce using rule 11 (instruction)
+
+
+State 20
+
+   12 instruction: JUMPF INTEGER .
+
+    $default  reduce using rule 12 (instruction)

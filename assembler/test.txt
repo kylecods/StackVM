@@ -1,0 +1,12 @@
+push 0
+push 4
+cmp
+jumpf 9
+push 10
+push 10 
+add
+jump 0 
+push 5
+push 6
+add
+halt
