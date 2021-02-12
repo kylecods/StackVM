@@ -31,8 +31,8 @@ Terminals, with rules where they appear
 
 $end (0) 0
 error (256)
-INTEGER (258) 11 12 15
-_FLOAT (259) 16
+INTEGER <ival> (258) 11 12 15
+_FLOAT <fval> (259) 16
 PUSH (260) 15 16
 ADD (261) 5
 MINUS (262)

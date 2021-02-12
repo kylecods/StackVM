@@ -22,6 +22,11 @@ typedef struct eravm{
     Instr instr;
     u32 pc;
 }ERAVM;
+typedef void (*Instructions)(ERAVM *vm);
+typedef struct opt_instr{
+    Instructions instrFn;
+    Opcodes type;
+}OPTINSTR;
 
 ERAVM *init_vm();
 void writeVal(ERAVM *vm, Instr instr);

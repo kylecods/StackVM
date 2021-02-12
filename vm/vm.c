@@ -69,6 +69,41 @@ void load_file(ERAVM *vm, const char *path){
     fclose(rp);
 }
 
+void op_push(ERAVM* vm){
+    if(vm->sp >= STACK_SIZE){
+        printf("Stack overflow by %d\n", vm->sp);
+    }
+    push(vm, vm->instr.operand);
+}
+void op_halt(ERAVM* vm){
+}
+
+OPTINSTR opt[] = {
+    {NULL, OP_NOP},
+    {op_push, OP_PUSH},
+    {NULL, OP_NOP},
+    {NULL, OP_NOP},
+    {NULL, OP_NOP},
+    {NULL, OP_NOP},
+    {NULL, OP_NOP},
+    {NULL, OP_NOP},
+    {NULL, OP_NOP},
+    {NULL, OP_NOP},
+    {NULL, OP_NOP},
+    {NULL, OP_NOP},
+    {NULL, OP_NOP},
+    {NULL, OP_NOP},
+    {NULL, OP_NOP},
+    {NULL, OP_NOP},
+    {NULL, OP_NOP},
+    {NULL, OP_NOP},
+    {op_halt, OP_HALT},
+
+};
+OPTINSTR* getOps(Opcodes codes){
+    return &opt[codes];
+}
+
 #define BINARY_OP(vm, op, type)\
           do {\
             if((vm)->sp < 2){\
@@ -79,138 +114,140 @@ void load_file(ERAVM *vm, const char *path){
 
 
 static void execute(ERAVM *vm){
-    switch (vm->instr.type)
-    {
-        case OP_PUSH:{
-            if(vm->sp >= STACK_SIZE){
-                printf("Stack overflow by %d\n", vm->sp);
-            }
-            push(vm,vm->instr.operand);
-            break;
-        }
-        case OP_POP:{
-            pop(vm);
-            break;
-        }
-        case OP_ADD:{
+    // switch (vm->instr.type)
+    // {
+    //     case OP_PUSH:{
+    //         if(vm->sp >= STACK_SIZE){
+    //             printf("Stack overflow by %d\n", vm->sp);
+    //         }
+    //         push(vm,vm->instr.operand);
+    //         break;
+    //     }
+    //     case OP_POP:{
+    //         pop(vm);
+    //         break;
+    //     }
+    //     case OP_ADD:{
             
-            // u32 right = pop(vm).UINT;
-            // u32 left = pop(vm).UINT;
-            // Values result;
-            // result.UINT = left + right;
-            // printf("ADD: %d\n", result.UINT);
-            BINARY_OP(vm,+,UINT);
-            // push(vm, result);
-            break;
-        }
+    //         // u32 right = pop(vm).UINT;
+    //         // u32 left = pop(vm).UINT;
+    //         // Values result;
+    //         // result.UINT = left + right;
+    //         // printf("ADD: %d\n", result.UINT);
+    //         BINARY_OP(vm,+,UINT);
+    //         // push(vm, result);
+    //         break;
+    //     }
         
-        case OP_MINUS:{
-            BINARY_OP(vm,-,UINT);
-            break;
-        }
-        case OP_DIVIDE:{
-            BINARY_OP(vm, /, UINT);
-            break;
-        }
-        case OP_MULTI:{
-            BINARY_OP(vm, *, UINT);
-            break;
-        }
-        case OP_BIT_OR:{
-            BINARY_OP(vm, |, UINT);
-            break;
-        }
-        case OP_BIT_AND:{
-            BINARY_OP(vm, &, UINT);
-            break;
-        }
-        case OP_GLOADI:{
+    //     case OP_MINUS:{
+    //         BINARY_OP(vm,-,UINT);
+    //         break;
+    //     }
+    //     case OP_DIVIDE:{
+    //         BINARY_OP(vm, /, UINT);
+    //         break;
+    //     }
+    //     case OP_MULTI:{
+    //         BINARY_OP(vm, *, UINT);
+    //         break;
+    //     }
+    //     case OP_BIT_OR:{
+    //         BINARY_OP(vm, |, UINT);
+    //         break;
+    //     }
+    //     case OP_BIT_AND:{
+    //         BINARY_OP(vm, &, UINT);
+    //         break;
+    //     }
+    //     case OP_GLOADI:{
             
-            u32 addr = vm->instr.operand.UINT;
-            Values val;
-            val.UINT =  *(u32*)&vm->mem[addr];
-            push(vm, val);
-            break;
-        }
-        case OP_GSTOREI: {
-            if(vm->sp < 1){
-                printf("Stack underflow by %d\n", vm->sp);
-            }
-            // Values val = pop(vm);
-            u32 addr = vm->instr.operand.UINT;
-            *(u32*)&vm->mem[addr] = (u32)vm->stack[(vm)->sp-1].UINT;
-            vm->sp -=1;
-            break;
-        }
-        case OP_JUMP:{
-            vm->pc = vm->instr.operand.UINT;
-            // vm->pc++;
-            break;
-        }
-        case OP_JUMPF:{
-            u32 jmp = pop(vm).UINT;
-            printf("%d\n", jmp);
-            // assert(jmp == 0);
-            if( jmp == 0){
-                vm->pc = vm->instr.operand.UINT;
-            }
+    //         u32 addr = vm->instr.operand.UINT;
+    //         Values val;
+    //         val.UINT =  *(u32*)&vm->mem[addr];
+    //         push(vm, val);
+    //         break;
+    //     }
+    //     case OP_GSTOREI: {
+    //         if(vm->sp < 1){
+    //             printf("Stack underflow by %d\n", vm->sp);
+    //         }
+    //         // Values val = pop(vm);
+    //         u32 addr = vm->instr.operand.UINT;
+    //         *(u32*)&vm->mem[addr] = (u32)vm->stack[(vm)->sp-1].UINT;
+    //         vm->sp -=1;
+    //         break;
+    //     }
+    //     case OP_JUMP:{
+    //         vm->pc = vm->instr.operand.UINT;
+    //         // vm->pc++;
+    //         break;
+    //     }
+    //     case OP_JUMPF:{
+    //         u32 jmp = pop(vm).UINT;
+    //         printf("%d\n", jmp);
+    //         // assert(jmp == 0);
+    //         if( jmp == 0){
+    //             vm->pc = vm->instr.operand.UINT;
+    //         }
 
-            break;   
-        }
-        case OP_LLOADI:{
-            u32 offset = vm->instr.operand.UINT;
-            Values stack_lval;
-            stack_lval.UINT = vm->stack[vm->fp+offset].UINT;
-            push(vm, stack_lval);
-            break;
-        }
-        case OP_CMP:{
-            // Values right = pop(vm);
-            // Values left = pop(vm);
-            // Values result; 
-            // // result.UINT = (left.UINT < right.UINT) ? 1 : 0;
-            // if(left.UINT < right.UINT){
-            //     result.UINT = 1;
-            // }else{
-            //     result.UINT = 0;
-            // }
-            vm->stack[(vm)->sp-1].UINT = (vm->stack[vm->sp-2].UINT < vm->stack[vm->sp-1].UINT) ? 1 : 0;
-            // printf("stack top cmp: %d\n", vm->stack[vm->sp-2]);
-            // vm->sp -=1;
-            // push(vm, result);
-            break;
-        }
-        case OP_LOOP:{
-            break;
-        }
-        case OP_CALL:{
-            Values ip;
-            Values fp;
-            Values nargs; 
-            nargs.UINT = vm->instr.operand.UINT;
-            ip.UINT = vm->pc;
-            fp.UINT = vm->fp;
-            push(vm, nargs);
-            push(vm, fp);
-            push(vm, ip);
-            vm->fp = vm->sp;
-            vm->pc = vm->instr.operand.UINT;
-            break;
-        }
-        case OP_RET:{
-            Values ret_value = pop(vm);
-            vm->fp = vm->sp;
-            vm->pc = pop(vm).UINT;
-            vm->fp = pop(vm).UINT;
-            u32 nargs = pop(vm).UINT;
-            vm->sp -= nargs;
-            push(vm,ret_value);
-            break;
-        }
-        default:
-            break;
+    //         break;   
+    //     }
+    //     case OP_LLOADI:{
+    //         u32 offset = vm->instr.operand.UINT;
+    //         Values stack_lval;
+    //         stack_lval.UINT = vm->stack[vm->fp+offset].UINT;
+    //         push(vm, stack_lval);
+    //         break;
+    //     }
+    //     case OP_CMP:{
+    //         // Values right = pop(vm);
+    //         // Values left = pop(vm);
+    //         // Values result; 
+    //         // // result.UINT = (left.UINT < right.UINT) ? 1 : 0;
+    //         // if(left.UINT < right.UINT){
+    //         //     result.UINT = 1;
+    //         // }else{
+    //         //     result.UINT = 0;
+    //         // }
+    //         vm->stack[(vm)->sp-1].UINT = (vm->stack[vm->sp-2].UINT < vm->stack[vm->sp-1].UINT) ? 1 : 0;
+    //         // printf("stack top cmp: %d\n", vm->stack[vm->sp-2]);
+    //         // vm->sp -=1;
+    //         // push(vm, result);
+    //         break;
+    //     }
+    //     case OP_LOOP:{
+    //         break;
+    //     }
+    //     case OP_CALL:{
+    //         Values ip;
+    //         Values fp;
+    //         Values nargs; 
+    //         nargs.UINT = vm->instr.operand.UINT;
+    //         ip.UINT = vm->pc;
+    //         fp.UINT = vm->fp;
+    //         push(vm, nargs);
+    //         push(vm, fp);
+    //         push(vm, ip);
+    //         vm->fp = vm->sp;
+    //         vm->pc = vm->instr.operand.UINT;
+    //         break;
+    //     }
+    //     case OP_RET:{
+    //         Values ret_value = pop(vm);
+    //         vm->fp = vm->sp;
+    //         vm->pc = pop(vm).UINT;
+    //         vm->fp = pop(vm).UINT;
+    //         u32 nargs = pop(vm).UINT;
+    //         vm->sp -= nargs;
+    //         push(vm,ret_value);
+    //         break;
+    //     }
+    //     default:
+    //         break;
          
-    }
+    // }
+    Instructions exec = getOps(vm->instr.type)->instrFn;
+    exec(vm);
 }
 #undef BINARY_OP
 //TESTING
