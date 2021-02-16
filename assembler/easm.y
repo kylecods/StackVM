@@ -12,7 +12,8 @@ u32 count = 0;
 %token <ival> INTEGER 
 %token <fval> _FLOAT
 
-%token PUSH ADD MINUS MULTI DIVIDE BIT_OR BIT_AND JUMP JUMPF HALT POP CMP LOOP
+%token PUSH IADD IMINUS IMULTI IDIVIDE FADD FMINUS FMULTI FDIVIDE BIT_OR BIT_AND LOAD JUMP JUMPF HALT POP LESS LOOP
+%token ARGS CALL RET
 
 
 %%
@@ -22,23 +23,40 @@ file:
         ;   
 
 instruction:
-         push_stmt             
+         push_stmt      
+         | load_stmt       
          |  POP                 {INSTR(OP_POP); count++; }
-         |  ADD                {INSTR(OP_ADD); count++; }
-         |  HALT               {INSTR(OP_HALT); count++; }
-         |  MULTI              {INSTR(OP_MULTI); count++; }
-         |  DIVIDE             {INSTR(OP_DIVIDE); count++; }
+         |  IADD                {INSTR(OP_IADD); count++; }
+         |  IMINUS              {INSTR(OP_IMINUS); count++; }
+         |  IMULTI              {INSTR(OP_IMULTI); count++; }
+         |  IDIVIDE             {INSTR(OP_IDIVIDE); count++; }
+
+         |  FADD                {INSTR(OP_FADD); count++; }
+         |  FMINUS              {INSTR(OP_FMINUS); count++; }
+         |  FMULTI              {INSTR(OP_FMULTI); count++; }
+         |  FDIVIDE             {INSTR(OP_FDIVIDE); count++; }
+
+
          |  BIT_AND            {INSTR(OP_BIT_AND); count++; }
          |  BIT_OR             {INSTR(OP_BIT_OR); count++; }
          |  JUMP INTEGER       {INSTR(OP_JUMP); _uint($2); count++; }
          |  JUMPF INTEGER      {INSTR(OP_JUMPF); _uint($2); count++; }
-         |  LOOP                {INSTR(OP_LOOP); count++; }
-         |  CMP                {INSTR(OP_CMP); count++; }
+        //  |  LOOP               {INSTR(OP_LOOP); count++; }
+         |  LESS                {INSTR(OP_LESS); count++; }
+         |  ARGS INTEGER        {INSTR(OP_NARGS); _uint($2); count++; }
+        |  CALL INTEGER        {INSTR(OP_CALL); _uint($2); count++; }
+        |  RET                 {INSTR(OP_RET); count++; }
+        |  HALT                {INSTR(OP_HALT); count++; }
          ;
 
 push_stmt:
     PUSH INTEGER       {INSTR(OP_PUSH); _uint($2); count++; } 
     | PUSH _FLOAT      {INSTR(OP_PUSH); _float($2); count++; }   
+    ;
+
+load_stmt:
+    LOAD INTEGER       {INSTR(OP_LOAD); _uint($2); count++; } 
+    // | LOAD _FLOAT      {INSTR(OP_LOAD); _float($2); count++; }   
     ;
 %%
 

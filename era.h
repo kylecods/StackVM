@@ -1,6 +1,8 @@
 #ifndef era_h
 #define era_h
 
+#include <stdbool.h>
+
 #define _RED "\x1b[31m"
 #define _RESET "\x1b[0m"
 
@@ -31,7 +33,6 @@ typedef enum opcodes{
     #define OPCODE(name) OP_##name,
     #include "vm/opcode.h"
     #undef OPCODE
-
 }Opcodes;
 
 typedef struct instr

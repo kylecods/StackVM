@@ -7,32 +7,15 @@
 
 int main(){
 
-    Instr prog[] = { 
-        {OP_PUSH, {.UINT = 7}}, 
-        // OP_PUSH,4,
-        // {OP_GSTOREI, {.UINT = 0}},
-        {OP_PUSH, {.UINT = 4}},
-        // {OP_GSTOREI, {.UINT = 1}},
-        // {OP_STOREI, {.UINT = 5}},
-        // {OP_LOADI, {.UINT = 5}},
-        // {OP_STOREI, {.UINT = 0}},
-        // {OP_GSTOREI, {.UINT = 0}},
-        // {OP_GLOADI, {.UINT = 1}},
-        // {OP_GLOADI, {.UINT = 0}},
-        // {OP_ILT, {.UINT = 0}},
-        // {OP_JUMPF, {.UINT = 13}},
-
-        // {OP_GLOADI, {.UINT = 1}},
-        // {OP_PUSH, {.UINT = 1}},
-        {OP_ADD, {.UINT = 0}},
-        {OP_PUSH, {.UINT = 10}},
-        {OP_GSTOREI, {.UINT = 1}},
-        // {OP_JUMP, {.UINT = 4}},
-        // {OP_BIT_AND, {.UINT = 0}},
-        // OP_ADD,
-        // OP_PUSH, 1,
-        // OP_MINUS,
-        {OP_HALT,{.UINT = 0}}
+    u8 prog[] = { 
+        OP_PUSH,4,
+        OP_STORE,1,
+        OP_PUSH,5,
+        OP_STORE, 0,
+        OP_PUSH, 3,
+        OP_LOAD, 1,
+        OP_IMINUS,
+        OP_HALT
     };
     ERAVM *vm = init_vm();
     // const char *path = "assembler/test1.ebin";
@@ -55,14 +38,20 @@ int main(){
     //     exit(74);
     // }
     // ERAVM *vm = init_vm();
-    // int len = sizeof prog / sizeof prog[0];
-    // for(int i = 0; i < len; i++){
-    //     writeVal(vm, prog[i]);
-    //     // vm->program_size +=1;
-    // }
-    load_file(vm, "assembler/test1.ebin");
-    run(vm);
+    int len = sizeof prog / sizeof prog[0];
+    for(int i = 0; i < len; i++){
+        writebyte(vm, prog[i]);
+        // vm->program_size +=1;
+    }
+    // writebyte(vm, OP_PUSH);
+    // writebyte(vm, 3);
+    // writebyte(vm, OP_HALT);
 
+
+    printf("%u\n", vm->program[1]);
+    // load_file(vm, "assembler/test1.ebin");
+    run(vm);
+    
     // FILE *fp = fopen("test.ebin", "wb");
 
     // // size_t element_size = sizeof *program;
@@ -107,16 +96,16 @@ int main(){
     printf("  u32\tf32\tptr\n\n");
     for (int i = 0; i < 10; i++)
     {
-        printf("%d: %d\t%.2f\t%p\n",i,vm->stack[i].UINT, vm->stack[i].FLOAT, vm->stack[i].ptr);
+        printf("%d: %d\t%.3f\t%p\n",i,vm->stack[i].UINT, vm->stack[i].FLOAT, vm->stack[i].ptr);
     }
-    printf("stack top: %d\n", vm->stack[vm->sp-1].UINT);
+    printf("stack top: %d\n", (*(vm->stackTop-1)).UINT);
     printf("program size: %d\n\n", vm->program_size);
 
     puts(_RED"-------MEM-------\n"_RESET);
     // printf("-------MEM-------\n");
     for (int i = 0; i < 10; i++)
     {
-        printf("%03d:\t%02x\n",i,vm->mem[i]);
+        printf("%d: %d\n",i,vm->mem[i].UINT);
     }
     
     free_vm(vm);

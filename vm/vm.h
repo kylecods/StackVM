@@ -3,24 +3,31 @@
 
 #include "../era.h"
 
+
+
+
 typedef struct eravm{
     //TODO: change later to maybe 64-bit
-    Instr program[PROG_SIZE];
+    u8 program[PROG_SIZE];
     u32 program_size;
-    Instr *pointer;
+    u8 *pointer;
+
+    //constant pool,jvm: where large numbers and strings live
+    Values constant_pool[STACK_SIZE];
 
     //stack
     Values stack[STACK_SIZE];
-    // Values *stackTop;
+    Values *stackTop;
     u32 sp;
     u32 fp;
 
     //memory
-    uint8_t mem[MEM_SIZE];
+    Values mem[MEM_SIZE];
 
     //instructions
-    Instr instr;
-    u32 pc;
+    u8 instr;
+    u8 pc;
+    bool state;
 }ERAVM;
 typedef void (*Instructions)(ERAVM *vm);
 typedef struct opt_instr{
@@ -29,7 +36,7 @@ typedef struct opt_instr{
 }OPTINSTR;
 
 ERAVM *init_vm();
-void writeVal(ERAVM *vm, Instr instr);
+void writebyte(ERAVM *vm, u8 byte);
 void load_file(ERAVM *vm, const char *path);
 void run(ERAVM *vm);
 void free_vm(ERAVM *vm);
