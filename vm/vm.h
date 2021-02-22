@@ -4,31 +4,37 @@
 #include "../era.h"
 
 
-
+typedef struct callframe
+{
+    Values *fpointer;
+    u8 *ip;
+}CallFrame;
 
 typedef struct eravm{
-    //TODO: change later to maybe 64-bit
+    CallFrame frames[FRAME_SIZE];
+    u32 frameCount;
+    //cant have globals store here
+    CallFrame *gframe;
+   
     u8 program[PROG_SIZE];
     u32 program_size;
     u8 *pointer;
 
-    //constant pool,jvm: where large numbers and strings live
-    Values constant_pool[STACK_SIZE];
+    //like constant pool in jvm: where large numbers and strings live
+    //NB: maybe make this dynamically allocated?
+    Values constant_pool[POOL_SIZE];
 
     //stack
     Values stack[STACK_SIZE];
     Values *stackTop;
-    u32 sp;
-    u32 fp;
-
-    //memory
-    Values mem[MEM_SIZE];
 
     //instructions
     u8 instr;
-    u8 pc;
     bool state;
 }ERAVM;
+
+
+
 typedef void (*Instructions)(ERAVM *vm);
 typedef struct opt_instr{
     Instructions instrFn;

@@ -11,12 +11,10 @@
 
 ERAVM* init_vm(){
     ERAVM *vm = (ERAVM *)malloc(sizeof(ERAVM));
+    vm->frameCount = 0;
     vm->pointer = vm->program;
     vm->program_size = 0;
     vm->stackTop = vm->stack;
-    vm->pc = 0;
-    vm->sp = 0;
-    vm->fp = 0;
     vm->state = true;
     return vm;
 }
@@ -58,75 +56,94 @@ void load_file(ERAVM *vm, const char *path){
     fclose(rp);
 }
 
-#define PUSH(vm, value) (*(vm)->stackTop++ = value)
+
+
+#define PUSH(vm, value) (*(vm)->stackTop++ = (value))
 #define POP(vm) (*(--(vm)->stackTop))
+#define PEEK(vm) (*((vm)->stackTop-1))
 #define DROP(vm) ((vm)->stackTop--)
-#define BINARY_OP(vm, op, valtype,type)\
+#define BINARY_OP(vm, op, valtype,type,more)\
           do {\
-            if((vm)->sp < 2){\
-                printf("Stack underflow by %d\n", (vm)->sp);\
-            }\
-            Values result;\
-            type left = POP(vm).valtype;\
-            type right = POP(vm).valtype;\
-            result.UINT = left op right; \
-            PUSH(vm, result);\
+            type left = more(POP((vm)));\
+            type right = more(POP((vm)));\
+            PUSH((vm), valtype(left op right));\
           } while(false);       \
 
 #define READ_BYTE(vm)  (*(vm)->pointer++)
 #define READ_SHORT(vm) ((vm)->pointer+=2, (u16)((vm)->pointer[-2] << 8)|((vm)->pointer[-1]))
-static void op_push(ERAVM* vm){
-    Values val;
-    val.UINT = READ_BYTE(vm);
-    PUSH(vm, val);
+#define READ_CONST(vm) ((vm)->constant_pool[READ_BYTE((vm))])
 
+#define NEWFRAME(vm, args)\
+    CallFrame *frame = &(vm)->frames[(vm)->frameCount++];\
+    frame->ip = (vm)->pointer;\
+    frame->fpointer = (vm)->stackTop - args - 1;\
+
+    
+
+#define LOADFRAME(vm)\
+    (vm)->gframe = &(vm)->frames[(vm)->frameCount-1];\
+
+
+#define TEMPLDCNST(vm,value,position)\
+    (vm)->constant_pool[(position)] = FLOAT_VAL((value));\
+
+
+static void op_cpush(ERAVM* vm){
+    PUSH(vm, CHAR_VAL(READ_BYTE(vm)));
+}
+static void op_spush(ERAVM* vm){
+    PUSH(vm, SHORT_VAL(READ_SHORT(vm)));
+}
+static void op_cnst(ERAVM *vm){
+    Values cnst = READ_CONST(vm);
+    PUSH(vm, cnst);
 }
 static void op_load(ERAVM* vm){
     u8 addr = READ_BYTE(vm);
-    Values val =  vm->mem[addr];
+    Values val =  vm->gframe->fpointer[addr];
     PUSH(vm, val);
 }
 static void op_store(ERAVM* vm){
-    
+    // LOADFRAME(vm);
     u8 addr = READ_BYTE(vm);
-    vm->mem[addr] = POP(vm);
+    vm->gframe->fpointer[addr] = POP(vm);
 }
 
 static void op_pop(ERAVM* vm){
     DROP(vm);
 }
 static void op_iadd(ERAVM* vm){
-    BINARY_OP(vm,+,UINT,u32);
+    BINARY_OP(vm,+,INT_VAL,u32,AS_INT);
 }
 static void op_iminus(ERAVM* vm){
-    BINARY_OP(vm,-,UINT,u32);
+    BINARY_OP(vm,-,INT_VAL,u32,AS_INT);
 }
 static void op_imulti(ERAVM* vm){
-    BINARY_OP(vm,*,UINT,u32);
+    BINARY_OP(vm,*,INT_VAL,u32,AS_INT);
 }
 static void op_idiv(ERAVM* vm){
-    BINARY_OP(vm,/,UINT,u32);
+    BINARY_OP(vm,/,INT_VAL,u32,AS_INT);
 }
 
 static void op_bit_and(ERAVM* vm){
-    BINARY_OP(vm,&,UINT,u32);
+    BINARY_OP(vm,&,INT_VAL,u32,AS_INT);
 }
 
 static void op_bit_or(ERAVM* vm){
-    BINARY_OP(vm,|,UINT,u32);
+    BINARY_OP(vm,|,INT_VAL,u32,AS_INT);
 }
 
 static void op_fadd(ERAVM* vm){
-    BINARY_OP(vm,+,FLOAT,float);
+    BINARY_OP(vm,+,FLOAT_VAL,float,AS_FLOAT);
 }
 static void op_fmulti(ERAVM* vm){
-    BINARY_OP(vm,*,FLOAT,float);
+    BINARY_OP(vm,*,FLOAT_VAL,float,AS_FLOAT);
 }
 static void op_fdiv(ERAVM* vm){
-    BINARY_OP(vm,/,FLOAT,float);
+    BINARY_OP(vm,/,FLOAT_VAL,float,AS_FLOAT);
 }
 static void op_fminus(ERAVM* vm){
-    BINARY_OP(vm,-,FLOAT,float);
+    BINARY_OP(vm,-,FLOAT_VAL,float,AS_FLOAT);
 }
 static void op_jump(ERAVM* vm){
      vm->pointer += READ_BYTE(vm);
@@ -138,40 +155,38 @@ static void op_loop(ERAVM *vm){
 }
 
 static void op_jumpf(ERAVM *vm){
-    u32 jmp = vm->stack[vm->sp-1].UINT;
+    u32 jmp = AS_INT(POP(vm));
     if(jmp == 0){
         u8 offset = READ_BYTE(vm);
         vm->pointer += offset;
     }
 }
 static void op_cmp(ERAVM *vm){
-    vm->stack[(vm)->sp-1].UINT = (vm->stack[vm->sp-2].UINT < vm->stack[vm->sp-1].UINT) ? 1 : 0;
+    u32 left = AS_INT(POP(vm));
+    u32 right = AS_INT(POP(vm));
+    PUSH(vm, INT_VAL(left < right ? 1 : 0));
 }
 
 
 static void op_call(ERAVM *vm){
-         Values ip;
-         Values fp;
-        //  Values nargs; 
-        //  nargs.UINT = vm->instr.operand.UINT;
-         ip.UINT = vm->pc;
-         fp.UINT = vm->fp;
-        //  push(vm, nargs);
-         PUSH(vm, fp);
-         PUSH(vm, ip);
-         vm->fp = vm->sp;
-         vm->pc = vm->instr;
+        u8 args = READ_BYTE(vm);
+        NEWFRAME(vm,args);
+        LOADFRAME(vm);
+}
+static void op_string(ERAVM *vm){
+
 }
 
 static void op_ret(ERAVM *vm){
-    //  Values ret_value = pop(vm);
-    //  printf("%d\n", ret_value.UINT);
-    //  vm->fp = vm->sp;
-    //  vm->pc = pop(vm).UINT;
-    //  vm->fp = pop(vm).UINT;
-    //  u32 nargs = pop(vm).UINT;
-    //  vm->sp -= nargs;
-    // push(vm,ret_value);
+     Values ret_value = POP(vm);
+     vm->frameCount--;
+
+     if(vm->frameCount == 0){
+         POP(vm);
+     }
+     vm->stackTop = vm->gframe->fpointer;
+     PUSH(vm,ret_value);
+     LOADFRAME(vm);
 }
 static void op_halt(ERAVM* vm){
     vm->state = false;
@@ -186,7 +201,9 @@ static void op_halt(ERAVM* vm){
 
 OPTINSTR opt[] = {
     {NULL, OP_NOP},
-    {op_push, OP_PUSH},
+    {op_cpush, OP_CPUSH},
+    {op_spush, OP_SPUSH},
+    {op_cnst, OP_CONST},
     {op_pop, OP_POP},
     {op_iadd, OP_IADD},
     {op_iminus, OP_IMINUS},
@@ -202,11 +219,11 @@ OPTINSTR opt[] = {
     {op_store, OP_STORE},
     {op_loop, OP_LOOP},
     {op_cmp, OP_CMP},
-    // {op_jump, OP_JUMP},
+    {op_jump, OP_JUMP},
     {op_jumpf, OP_JUMPF},
-    // {NULL, OP_NOP},
-    // {op_call, OP_CALL},
-    // {op_ret, OP_RET},
+    {op_call, OP_CALL},
+    // {op_string, OP_STRING},
+    {op_ret, OP_RET},
     {op_halt, OP_HALT}
 
 };
@@ -233,41 +250,41 @@ static void execute(ERAVM *vm){
     //     }
     //     case OP_ADD:{
             
-    //         // u32 right = pop(vm).UINT;
-    //         // u32 left = pop(vm).UINT;
+    //         // u32 right = pop(vm).INT;
+    //         // u32 left = pop(vm).INT;
     //         // Values result;
-    //         // result.UINT = left + right;
-    //         // printf("ADD: %d\n", result.UINT);
-    //         BINARY_OP(vm,+,UINT);
+    //         // result.INT = left + right;
+    //         // printf("ADD: %d\n", result.INT);
+    //         BINARY_OP(vm,+,INT);
     //         // push(vm, result);
     //         break;
     //     }
         
     //     case OP_MINUS:{
-    //         BINARY_OP(vm,-,UINT);
+    //         BINARY_OP(vm,-,INT);
     //         break;
     //     }
     //     case OP_DIVIDE:{
-    //         BINARY_OP(vm, /, UINT);
+    //         BINARY_OP(vm, /, INT);
     //         break;
     //     }
     //     case OP_MULTI:{
-    //         BINARY_OP(vm, *, UINT);
+    //         BINARY_OP(vm, *, INT);
     //         break;
     //     }
     //     case OP_BIT_OR:{
-    //         BINARY_OP(vm, |, UINT);
+    //         BINARY_OP(vm, |, INT);
     //         break;
     //     }
     //     case OP_BIT_AND:{
-    //         BINARY_OP(vm, &, UINT);
+    //         BINARY_OP(vm, &, INT);
     //         break;
     //     }
     //     case OP_GLOADI:{
             
-    //         u32 addr = vm->instr.operand.UINT;
+    //         u32 addr = vm->instr.operand.INT;
     //         Values val;
-    //         val.UINT =  *(u32*)&vm->mem[addr];
+    //         val.INT =  *(u32*)&vm->mem[addr];
     //         push(vm, val);
     //         break;
     //     }
@@ -276,30 +293,30 @@ static void execute(ERAVM *vm){
     //             printf("Stack underflow by %d\n", vm->sp);
     //         }
     //         // Values val = pop(vm);
-    //         u32 addr = vm->instr.operand.UINT;
-    //         *(u32*)&vm->mem[addr] = (u32)vm->stack[(vm)->sp-1].UINT;
+    //         u32 addr = vm->instr.operand.INT;
+    //         *(u32*)&vm->mem[addr] = (u32)vm->stack[(vm)->sp-1].INT;
     //         vm->sp -=1;
     //         break;
     //     }
     //     case OP_JUMP:{
-    //         vm->pc = vm->instr.operand.UINT;
+    //         vm->pc = vm->instr.operand.INT;
     //         // vm->pc++;
     //         break;
     //     }
     //     case OP_JUMPF:{
-    //         u32 jmp = pop(vm).UINT;
+    //         u32 jmp = pop(vm).INT;
     //         printf("%d\n", jmp);
     //         // assert(jmp == 0);
     //         if( jmp == 0){
-    //             vm->pc = vm->instr.operand.UINT;
+    //             vm->pc = vm->instr.operand.INT;
     //         }
 
     //         break;   
     //     }
     //     case OP_LLOADI:{
-    //         u32 offset = vm->instr.operand.UINT;
+    //         u32 offset = vm->instr.operand.INT;
     //         Values stack_lval;
-    //         stack_lval.UINT = vm->stack[vm->fp+offset].UINT;
+    //         stack_lval.INT = vm->stack[vm->fp+offset].INT;
     //         push(vm, stack_lval);
     //         break;
     //     }
@@ -307,13 +324,13 @@ static void execute(ERAVM *vm){
     //         // Values right = pop(vm);
     //         // Values left = pop(vm);
     //         // Values result; 
-    //         // // result.UINT = (left.UINT < right.UINT) ? 1 : 0;
-    //         // if(left.UINT < right.UINT){
-    //         //     result.UINT = 1;
+    //         // // result.INT = (left.INT < right.INT) ? 1 : 0;
+    //         // if(left.INT < right.INT){
+    //         //     result.INT = 1;
     //         // }else{
-    //         //     result.UINT = 0;
+    //         //     result.INT = 0;
     //         // }
-    //         vm->stack[(vm)->sp-1].UINT = (vm->stack[vm->sp-2].UINT < vm->stack[vm->sp-1].UINT) ? 1 : 0;
+    //         vm->stack[(vm)->sp-1].INT = (vm->stack[vm->sp-2].INT < vm->stack[vm->sp-1].INT) ? 1 : 0;
     //         // printf("stack top cmp: %d\n", vm->stack[vm->sp-2]);
     //         // vm->sp -=1;
     //         // push(vm, result);
@@ -326,22 +343,22 @@ static void execute(ERAVM *vm){
     //         Values ip;
     //         Values fp;
     //         Values nargs; 
-    //         nargs.UINT = vm->instr.operand.UINT;
-    //         ip.UINT = vm->pc;
-    //         fp.UINT = vm->fp;
+    //         nargs.INT = vm->instr.operand.INT;
+    //         ip.INT = vm->pc;
+    //         fp.INT = vm->fp;
     //         push(vm, nargs);
     //         push(vm, fp);
     //         push(vm, ip);
     //         vm->fp = vm->sp;
-    //         vm->pc = vm->instr.operand.UINT;
+    //         vm->pc = vm->instr.operand.INT;
     //         break;
     //     }
     //     case OP_RET:{
     //         Values ret_value = pop(vm);
     //         vm->fp = vm->sp;
-    //         vm->pc = pop(vm).UINT;
-    //         vm->fp = pop(vm).UINT;
-    //         u32 nargs = pop(vm).UINT;
+    //         vm->pc = pop(vm).INT;
+    //         vm->fp = pop(vm).INT;
+    //         u32 nargs = pop(vm).INT;
     //         vm->sp -= nargs;
     //         push(vm,ret_value);
     //         break;
@@ -353,7 +370,10 @@ static void execute(ERAVM *vm){
     // u8 instr = *vm->pointer++;
     //  printf("Instr: %u\n", mv_>instr);
     Instructions exec = getOps(vm->instr)->instrFn;
+  
     exec(vm);
+  
+
 }
 #undef BINARY_OP
 //TESTING
@@ -376,14 +396,30 @@ void run(ERAVM *vm){
     // fclose(fp); 
     // printf("Instr: %u\n", vm->state);
     // for (int i = 0; i < 20 && !vm->state; i++)
+      NEWFRAME(vm,0);
+      LOADFRAME(vm);
+    //   TEMPLDCNST(vm,25.5,1);
+      TEMPLDCNST(vm,25000.5909,0);
+      TEMPLDCNST(vm,25.5,1);
+      TEMPLDCNST(vm,0.5,2);
+      TEMPLDCNST(vm,4004.5,3);
+
     while (vm->state)
     {
+          
+    //   TEMPLDCNST(vm,25000.5909,0);
         fetch(vm);
 
         // printf("Instr: %u\n", vm->instr);
         execute(vm);
         
     }
+    for (int i = 0; i < 10; i++)
+    {
+          printf("%d => LOCALS STORE: %d\n", i, AS_CHAR(vm->gframe->fpointer[i]));
+        //   printf("FRAMECOUNT: %d\n",  vm->frameCount);s
+    }
+    
    
     
 }

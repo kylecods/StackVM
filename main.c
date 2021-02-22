@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "vm/vm.h"
 
@@ -8,13 +9,17 @@
 int main(){
 
     u8 prog[] = { 
-        OP_PUSH,4,
-        OP_STORE,1,
-        OP_PUSH,5,
-        OP_STORE, 0,
-        OP_PUSH, 3,
-        OP_LOAD, 1,
-        OP_IMINUS,
+        // fun_name(1)..
+        OP_CPUSH, '+',
+        OP_CPUSH, '-',
+        OP_CPUSH, '/',
+        OP_CPUSH, '%',
+        OP_SPUSH, 0xff, 0xf0, 
+        OP_CONST, 0,
+        OP_CONST, 1,
+        OP_CONST, 2,
+        OP_CONST, 3,
+        OP_POP,    
         OP_HALT
     };
     ERAVM *vm = init_vm();
@@ -48,7 +53,7 @@ int main(){
     // writebyte(vm, OP_HALT);
 
 
-    printf("%u\n", vm->program[1]);
+    
     // load_file(vm, "assembler/test1.ebin");
     run(vm);
     
@@ -91,22 +96,17 @@ int main(){
    
    
     
-    // Dump stack
-    printf("-------STACK-------\n");
-    printf("  u32\tf32\tptr\n\n");
-    for (int i = 0; i < 10; i++)
-    {
-        printf("%d: %d\t%.3f\t%p\n",i,vm->stack[i].UINT, vm->stack[i].FLOAT, vm->stack[i].ptr);
-    }
-    printf("stack top: %d\n", (*(vm->stackTop-1)).UINT);
     printf("program size: %d\n\n", vm->program_size);
 
-    puts(_RED"-------MEM-------\n"_RESET);
-    // printf("-------MEM-------\n");
-    for (int i = 0; i < 10; i++)
+    puts(_RED"-------STACK-------\n"_RESET);
+    //Dump stack for debugging purposes
+    for (Values *slot = vm->stack; slot < vm->stackTop; slot++)
     {
-        printf("%d: %d\n",i,vm->mem[i].UINT);
+        printf(_GREEN"[ ");
+        PRINTVAL(*slot);
+        printf(" ]"_RESET);
     }
+    printf("\n");
     
     free_vm(vm);
      
