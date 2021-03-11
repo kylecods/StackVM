@@ -5,21 +5,34 @@
 
 #include "vm/vm.h"
 
+int constr(ERAVM *vm, Values *args){
+    return 0;
+}
 
 int main(){
 
     u8 prog[] = { 
         // fun_name(1)..
-        OP_CPUSH, '+',
-        OP_CPUSH, '-',
-        OP_CPUSH, '/',
-        OP_CPUSH, '%',
-        OP_SPUSH, 0xff, 0xf0, 
-        OP_CONST, 0,
-        OP_CONST, 1,
-        OP_CONST, 2,
-        OP_CONST, 3,
-        OP_POP,    
+        OP_SPUSH, 0x00, 0xf0,
+//        OP_JUMP,8,//name of the function, or be the label...
+        OP_CPUSH,'+',
+//        OP_STORE, 0,
+//        OP_LOAD,0,
+//        OP_RET,
+//         OP_CPUSH, '3',
+
+        // OP_CPUSH, '/',
+        // OP_CPUSH, '%',
+        // OP_SPUSH, 0xff, 0xf0,
+//        OP_CPUSH,'-',
+//        OP_CALL,1,2,
+//        OP_STORE,1,
+//        OP_POP,
+        // OP_CONST, 0,
+        // OP_CONST, 1,
+        // OP_CONST, 2,
+        // OP_CONST, 3,
+        // OP_POP,    
         OP_HALT
     };
     ERAVM *vm = init_vm();
@@ -48,11 +61,8 @@ int main(){
         writebyte(vm, prog[i]);
         // vm->program_size +=1;
     }
-    // writebyte(vm, OP_PUSH);
-    // writebyte(vm, 3);
-    // writebyte(vm, OP_HALT);
-
-
+    TEMPLDCNST(vm,4004.5,0);
+  
     
     // load_file(vm, "assembler/test1.ebin");
     run(vm);
@@ -98,13 +108,13 @@ int main(){
     
     printf("program size: %d\n\n", vm->program_size);
 
-    puts(_RED"-------STACK-------\n"_RESET);
+    puts("-------STACK-------\n");
     //Dump stack for debugging purposes
-    for (Values *slot = vm->stack; slot < vm->stackTop; slot++)
+    for (int slot = 0; slot < vm->sp; slot++)
     {
-        printf(_GREEN"[ ");
-        PRINTVAL(*slot);
-        printf(" ]"_RESET);
+        printf("[ ");
+        PRINTVAL(vm->stack[slot]);
+        printf(" ]");
     }
     printf("\n");
     

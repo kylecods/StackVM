@@ -27,6 +27,7 @@
 #define STACK_SIZE 1024
 #define POOL_SIZE (1024 * 1024)
 #define FRAME_SIZE 64
+#define METHOD_COUNT 100
 
 typedef enum valtype {
     VAL_CHAR,
@@ -65,6 +66,7 @@ typedef struct values{
 #define SHORT_VAL(value)  ((Values){ VAL_SHORT, {.SHORT = (value) } })
 #define INT_VAL(value)    ((Values){ VAL_INT,  {.INT = (value) } })
 #define FLOAT_VAL(value)  ((Values){ VAL_FLOAT, {.FLOAT = (value) } })
+#define OBJ_VAL(value)  ((Values){ VAL_STRING, {.ptr = (value) } })
 
 #define PRINT_CHAR(value)\
     printf("%c", AS_CHAR((value)))\
@@ -78,27 +80,34 @@ typedef struct values{
 #define PRINT_FLOAT(value)\
     printf("%g", AS_FLOAT((value)))\
 
-#define PRINTVAL(value)\
-    switch ((value).type){\
-        case VAL_CHAR:\
-            PRINT_CHAR((value));\
-            break; \
-        case VAL_SHORT:\
-            PRINT_SHORT((value));\
-            break;\
-        case VAL_INT:\
-            PRINT_INT((value));\
-            break;\
-        case VAL_FLOAT:\
-            PRINT_FLOAT((value));\
-            break;\    
-    }\
 
+#define PRINT_OBJ()\
+    printf("%s", "<main>")\
+
+static inline void PRINTVAL(Values value){
+    switch (value.type){
+        case VAL_CHAR:
+            PRINT_CHAR(value);
+            break;
+        case VAL_SHORT:
+            PRINT_SHORT(value);
+            break;
+        case VAL_INT:
+            PRINT_INT(value);
+            break;
+        case VAL_FLOAT:
+            PRINT_FLOAT(value);
+            break;  
+        case VAL_STRING:
+           printf("%s", "<main>");
+           break;
+    }
+}
 
 
 typedef enum opcodes{ 
     #define OPCODE(name) OP_##name,
-    #include "vm/opcode.h"
+    #include "./vm/opcode.h"
     #undef OPCODE
 }Opcodes;
 
